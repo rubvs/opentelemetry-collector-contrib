@@ -8,24 +8,30 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.opentelemetry.io/collector/consumer/consumererror"
 )
 
 // FranzSyncProducer is a wrapper around the franz-go client that implements
 // the Producer interface. Allowing us to use the franz-go client while
 // maintaining compatibility with the existing Kafka exporter code.
 type FranzSyncProducer struct {
-	client       *kgo.Client
-	metadataKeys []string
+	client           *kgo.Client
+	metadataKeys     []string
+	nonRetryableErrs []int16
 }
 
 // NewFranzSyncProducer Franz-go producer from a kgo.Client and a Messenger.
-func NewFranzSyncProducer(client *kgo.Client,
+func NewFranzSyncProducer(
+	client *kgo.Client,
 	metadataKeys []string,
+	nonRetryableErrs []int16,
 ) *FranzSyncProducer {
 	return &FranzSyncProducer{
-		client:       client,
-		metadataKeys: metadataKeys,
+		client:           client,
+		metadataKeys:     metadataKeys,
+		nonRetryableErrs: nonRetryableErrs,
 	}
 }
 
@@ -43,10 +49,8 @@ func (p *FranzSyncProducer) ExportData(ctx context.Context, msgs Messages) error
 	var errs []error
 	for _, r := range result {
 		if r.Err != nil {
-			errs = append(
-				errs,
-				fmt.Errorf("error exporting to topic %q: %w", r.Record.Topic, r.Err),
-			)
+			err := fmt.Errorf("error exporting to topic %q: %w", r.Record.Topic, r.Err)
+			errs = append(errs, wrapKafkaError(err, p.nonRetryableErrs))
 		}
 	}
 	return errors.Join(errs...)
@@ -73,4 +77,18 @@ func makeFranzMessages(messages Messages) []*kgo.Record {
 		}
 	}
 	return msgs
+}
+
+func wrapKafkaError(err error, nonRetryable []int16) error {
+	nonRetryableMap := make(map[int16]struct{}, len(nonRetryable))
+	for _, code := range nonRetryable {
+		nonRetryableMap[code] = struct{}{}
+	}
+	var fkErr *kerr.Error
+	if errors.As(err, &fkErr) {
+		if _, exists := nonRetryableMap[fkErr.Code]; exists {
+			return consumererror.NewPermanent(err)
+		}
+	}
+	return err
 }

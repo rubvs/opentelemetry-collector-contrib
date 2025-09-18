@@ -80,6 +80,7 @@ func TestLoadConfig(t *testing.T) {
 				PartitionTracesByID:                  true,
 				PartitionMetricsByResourceAttributes: true,
 				PartitionLogsByResourceAttributes:    true,
+				NonRetryableErrs:                     []int16{},
 			},
 		},
 		{
@@ -107,7 +108,8 @@ func TestLoadConfig(t *testing.T) {
 					Topic:    "legacy_topic",
 					Encoding: "otlp_proto",
 				},
-				Topic: "legacy_topic",
+				Topic:            "legacy_topic",
+				NonRetryableErrs: []int16{},
 			},
 		},
 		{
@@ -134,7 +136,8 @@ func TestLoadConfig(t *testing.T) {
 					Topic:    "otlp_profiles",
 					Encoding: "legacy_encoding",
 				},
-				Encoding: "legacy_encoding",
+				Encoding:         "legacy_encoding",
+				NonRetryableErrs: []int16{},
 			},
 		},
 	}

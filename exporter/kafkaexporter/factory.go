@@ -71,6 +71,7 @@ func createDefaultConfig() component.Config {
 		},
 		PartitionMetricsByResourceAttributes: defaultPartitionMetricsByResourceAttributesEnabled,
 		PartitionLogsByResourceAttributes:    defaultPartitionLogsByResourceAttributesEnabled,
+		NonRetryableErrs:                     []int16{}, // 3 - UNKNOWN_TOPIC_OR_PARTITION
 	}
 }
 

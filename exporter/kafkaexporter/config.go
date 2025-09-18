@@ -71,6 +71,9 @@ type Config struct {
 	// If this is true, then the message key will be set to a hash of the resource's identifying
 	// attributes.
 	PartitionLogsByResourceAttributes bool `mapstructure:"partition_logs_by_resource_attributes"`
+
+	// NonRetryableErrs is a list of error coded on which the exporter will not retry.
+	NonRetryableErrs []int16 `mapstructure:"non_retryable_errs"`
 }
 
 func (c *Config) Unmarshal(conf *confmap.Conf) error {

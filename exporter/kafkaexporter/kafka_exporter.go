@@ -111,8 +111,10 @@ func (e *kafkaExporter[T]) Start(ctx context.Context, host component.Host) (err 
 		if ferr != nil {
 			return ferr
 		}
-		e.producer = kafkaclient.NewFranzSyncProducer(producer,
+		e.producer = kafkaclient.NewFranzSyncProducer(
+			producer,
 			e.cfg.IncludeMetadataKeys,
+			e.cfg.NonRetryableErrs,
 		)
 		return nil
 	}
